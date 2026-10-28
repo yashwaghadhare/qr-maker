@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stylish QR Code Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{--bg:#f6f4fb;--card:#fff;--text:#1d1b2b;--muted:#6b6880;--line:#e3dff0;--accent:#6a3fd1;--accent2:#e4286e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14121c;--card:#1e1b2b;--text:#f1eefb;--muted:#a29fb8;--line:#33304a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14121c;--card:#1e1b2b;--text:#f1eefb;--muted:#a29fb8;--line:#33304a;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding:28px 18px 40px}
+h1{margin:0 0 4px;font-size:26px}
+.sub{color:var(--muted);margin:0 0 22px}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:start}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
+h2:first-child{margin-top:0;padding-top:0;border:0}
+label.l{display:block;font-weight:600;font-size:14px;margin:0 0 6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.val{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+textarea,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;font-size:15px}
+textarea{min-height:84px;resize:vertical}
+.field{margin-bottom:16px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:2px;cursor:pointer}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.colors{display:flex;gap:14px;align-items:center}
+.drop{display:flex;align-items:center;gap:12px;border:2px dashed var(--line);border-radius:12px;padding:12px;cursor:pointer}
+.drop:hover{border-color:var(--accent)}
+.drop img{width:48px;height:48px;object-fit:contain;border-radius:8px;background:var(--bg)}
+.drop span{color:var(--muted);font-size:14px}
+input[type=file]{display:none}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+button{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:600;cursor:pointer}
+.primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;width:100%;font-size:16px}
+.ghost{background:var(--bg);color:var(--text);border:1px solid var(--line);padding:9px 14px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.sticky{position:sticky;top:14px}
+.preview{display:flex;flex-direction:column;align-items:center;gap:14px}
+canvas{width:100%;max-width:440px;height:auto;aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:#fff}
+canvas.tr{background:repeating-conic-gradient(#d9d9d9 0 25%,#fff 0 50%) 0 0/20px 20px}
+.note{font-size:13px;color:var(--muted);min-height:18px;text-align:center}
+.note.warn{color:#c0392b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Stylish QR Code Generator</h1>
+  <p class="sub">Paste a link, upload your logo, customise, and download. The code never expires.</p>
+  <div class="grid">
+    <div class="card">
+      <h2>Content</h2>
+      <div class="field">
+        <label class="l" for="link">Link</label>
+        <textarea id="link" placeholder="https://example.com"></textarea>
+      </div>
+      <div class="field">
+        <label class="l">Centre logo</label>
+        <label class="drop" for="logo">
+          <img id="thumb" alt="" style="display:none">
+          <span id="fname">Click to upload a logo (PNG with transparent background works best)</span>
+        </label>
+        <input type="file" id="logo" accept="image/*">
+        <div style="margin-top:8px"><button class="ghost" id="rm" style="display:none">Remove logo</button></div>
+      </div>
+      <div class="field">
+        <div class="row"><label class="l" for="logoSize">Logo size</label><span class="val" id="logoSizeV"></span></div>
+        <input type="range" id="logoSize" min="15" max="32" step="1" value="27">
+      </div>
+
+      <h2>Layout</h2>
+      <div class="field">
+        <div class="row"><label class="l" for="pad">Padding (white border)</label><span class="val" id="padV"></span></div>
+        <input type="range" id="pad" min="0" max="10" step="1" value="4">
+      </div>
+      <div class="field">
+        <div class="row"><label class="l" for="radius">Outer corner roundness</label><span class="val" id="radiusV"></span></div>
+        <input type="range" id="radius" min="0" max="100" step="1" value="30">
+      </div>
+      <div class="two">
+        <div class="field"><label class="l" for="size">Download size</label>
+          <select id="size"><option value="800">800 px</option><option value="1200">1200 px</option><option value="1600" selected>1600 px</option><option value="2400">2400 px</option><option value="3200">3200 px</option></select></div>
+        <div class="field"><label class="l" for="bg">Background</label>
+          <div class="colors"><input type="color" id="bg" value="#ffffff"><label class="chk"><input type="checkbox" id="tr"> Transparent</label></div></div>
+      </div>
+
+      <h2>Style</h2>
+      <div class="two">
+        <div class="field"><label class="l" for="shape">Dot shape</label>
+          <select id="shape"><option value="round" selected>Round</option><option value="soft">Soft square</option><option value="square">Square</option><option value="tiny">Small dots</option></select></div>
+        <div class="field"><label class="l" for="corner">Corner markers</label>
+          <select id="corner"><option value="round" selected>Rounded</option><option value="square">Square</option></select></div>
+      </div>
+      <div class="two">
+        <div class="field"><label class="l" for="preset">Colours</label>
+          <select id="preset">
+            <option value="brand" selected>Brand (magenta to green)</option>
+            <option value="ocean">Ocean</option>
+            <option value="sunset">Sunset</option>
+            <option value="forest">Forest</option>
+            <option value="black">Classic black</option>
+            <option value="custom">Custom</option>
+          </select></div>
+        <div class="field" id="customBox" style="display:none"><label class="l">Custom gradient</label>
+          <div class="colors"><input type="color" id="c1" value="#e4286e"><input type="color" id="c2" value="#1e6edc"></div></div>
+      </div>
+    </div>
+
+    <div class="card preview sticky">
+      <canvas id="cv" width="1600" height="1600"></canvas>
+      <div class="note" id="note">Enter a link to see your QR code.</div>
+      <button class="primary" id="dl" disabled>Download PNG</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id);};
+var cv=$('cv'),ctx=cv.getContext('2d'),note=$('note'),dl=$('dl'),rm=$('rm'),logoImg=null;
+var PRESETS={
+  brand:[[0,'#8e24aa'],[0.35,'#e4286e'],[0.6,'#5a3cc8'],[0.8,'#1e6edc'],[1,'#3caf46']],
+  ocean:[[0,'#00c6ff'],[0.5,'#0072ff'],[1,'#7b2ff7']],
+  sunset:[[0,'#ff512f'],[0.5,'#f09819'],[1,'#dd2476']],
+  forest:[[0,'#11998e'],[1,'#38a65a']],
+  black:[[0,'#111111'],[1,'#111111']]
+};
+var SHAPES={round:{g:.08,r:.38},soft:{g:.03,r:.25},square:{g:0,r:0},tiny:{g:.2,r:.5}};
+var CORNERS={round:[2.2,1.5,1.1],square:[0,0,0]};
+try{if(qrcode.stringToBytesFuncs&&qrcode.stringToBytesFuncs['UTF-8'])qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];}catch(e){}
+
+function rr(c,x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+function stops(){
+  var p=$('preset').value;
+  if(p==='custom')return [[0,$('c1').value],[1,$('c2').value]];
+  return PRESETS[p];
+}
+
+function draw(){
+  $('logoSizeV').textContent=$('logoSize').value+'%';
+  $('padV').textContent=$('pad').value+' modules';
+  $('radiusV').textContent=$('radius').value+'%';
+  $('customBox').style.display=$('preset').value==='custom'?'block':'none';
+  var transparent=$('tr').checked;
+  cv.className=transparent?'tr':'';
+  var W=parseInt($('size').value,10);
+  if(cv.width!==W){cv.width=W;cv.height=W;}
+  var text=$('link').value.trim();
+  if(text&&!/^[a-z][a-z0-9+.-]*:/i.test(text)&&/^[^\s]+\.[^\s]+$/.test(text))text='https://'+text;
+  ctx.clearRect(0,0,W,W);
+  if(!text){dl.disabled=true;note.className='note';note.textContent='Enter a link to see your QR code.';
+    if(!transparent){ctx.fillStyle=$('bg').value;ctx.fillRect(0,0,W,W);}return;}
+  var q;
+  try{q=qrcode(0,'H');q.addData(text);q.make();}
+  catch(e){dl.disabled=true;note.className='note warn';note.textContent='That link is too long for a QR code.';return;}
+  var n=q.getModuleCount(),pad=parseInt($('pad').value,10),B=W/(n+pad*2),off=pad*B;
+  var sh=SHAPES[$('shape').value],co=CORNERS[$('corner').value];
+  var mask=document.createElement('canvas');mask.width=mask.height=W;
+  var m=mask.getContext('2d');
+  var hasLogo=!!logoImg,clearR=n*parseInt($('logoSize').value,10)/200,mid=n/2;
+  function inFinder(r,c){return (r<7&&c<7)||(r<7&&c>=n-7)||(r>=n-7&&c<7);}
+  function finder(r0,c0){
+    var x=off+c0*B,y=off+r0*B;
+    m.globalCompositeOperation='source-over';m.fillStyle='#000';rr(m,x,y,7*B,7*B,co[0]*B);m.fill();
+    m.globalCompositeOperation='destination-out';rr(m,x+B,y+B,5*B,5*B,co[1]*B);m.fill();
+    m.globalCompositeOperation='source-over';rr(m,x+2*B,y+2*B,3*B,3*B,co[2]*B);m.fill();
+  }
+  m.fillStyle='#000';
+  for(var r=0;r<n;r++)for(var c=0;c<n;c++){
+    if(!q.isDark(r,c)||inFinder(r,c))continue;
+    if(hasLogo&&Math.max(Math.abs(r+.5-mid),Math.abs(c+.5-mid))<clearR+0.8)continue;
+    var g=B*sh.g;rr(m,off+c*B+g,off+r*B+g,B-2*g,B-2*g,B*sh.r);m.fill();
+  }
+  finder(0,0);finder(0,n-7);finder(n-7,0);
+  m.globalCompositeOperation='source-in';
+  var gr=m.createLinearGradient(0,0,W,W);stops().forEach(function(s){gr.addColorStop(s[0],s[1]);});
+  m.fillStyle=gr;m.fillRect(0,0,W,W);
+  if(!transparent){ctx.fillStyle=$('bg').value;rr(ctx,0,0,W,W,W*0.12*parseInt($('radius').value,10)/100);ctx.fill();}
+  ctx.drawImage(mask,0,0);
+  if(hasLogo){
+    var box=clearR*2*B*1.05,ar=logoImg.width/logoImg.height,w=box,h=box;
+    if(ar>1)h=box/ar;else w=box*ar;
+    ctx.drawImage(logoImg,(W-w)/2,(W-h)/2,w,h);
+  }
+  dl.disabled=false;
+  if(n>65){note.className='note warn';note.textContent='Long link: the code is dense. Print it at least 4 cm wide, or use a shorter link.';}
+  else if(hasLogo&&parseInt($('logoSize').value,10)>30){note.className='note warn';note.textContent='Large logo: test the scan on your phone before printing.';}
+  else{note.className='note';note.textContent='Scan with your phone to test before printing.';}
+}
+
+['link','logoSize','pad','radius','size','bg','tr','shape','corner','preset','c1','c2'].forEach(function(id){
+  $(id).addEventListener('input',draw);$(id).addEventListener('change',draw);
+});
+
+$('logo').addEventListener('change',function(){
+  var f=this.files&&this.files[0];if(!f)return;
+  function ok(img,src){
+    if(!img.width||!img.height){try{img.width=512;img.height=512;}catch(e){}}
+    logoImg=img;$('thumb').src=src;$('thumb').style.display='block';$('fname').textContent=f.name;rm.style.display='inline-block';draw();
+  }
+  function fail(){note.className='note warn';note.textContent='Could not read "'+f.name+'". Please use a PNG, JPG, WebP or SVG file.';}
+  var fr=new FileReader();
+  fr.onload=function(){
+    var src=fr.result,img=new Image();
+    img.onload=function(){ok(img,src);};
+    img.onerror=function(){
+      if(window.createImageBitmap){
+        createImageBitmap(f).then(function(bm){
+          var c=document.createElement('canvas');c.width=bm.width;c.height=bm.height;
+          c.getContext('2d').drawImage(bm,0,0);
+          var png=c.toDataURL('image/png'),i2=new Image();
+          i2.onload=function(){ok(i2,png);};i2.onerror=fail;i2.src=png;
+        }).catch(fail);
+      }else fail();
+    };
+    img.src=src;
+  };
+  fr.onerror=fail;fr.readAsDataURL(f);
+});
+rm.addEventListener('click',function(){
+  logoImg=null;$('logo').value='';$('thumb').style.display='none';
+  $('fname').textContent='Click to upload a logo (PNG with transparent background works best)';rm.style.display='none';draw();
+});
+dl.addEventListener('click',function(){
+  var a=document.createElement('a');a.download='qr-code.png';a.href=cv.toDataURL('image/png');
+  document.body.appendChild(a);a.click();a.remove();
+});
+draw();
+})();
+</script>
+</body>
+</html>
